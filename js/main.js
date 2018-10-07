@@ -59,13 +59,19 @@ var rpsGame =
         }
         
     },
-    leaveTheGame: function()
+    leaveTheGame: async function(isClosing)
     {
-        if(rpsGame.currentPlayer !== null)
+        if(isClosing) firebase.database().ref("players/").off();
+
+        if(this.currentPlayer !== null)
         {
-            console.log("leaving");
-            firebase.database().ref("players/" + this.currentPlayer).remove();
-        }        
+            var removed = await firebase.database().ref("players/" + this.currentPlayer).remove();
+            
+            this.currentPlayer = null;
+            $("#players-area").hide();
+            $("#welcome").show();
+            console.log(removed);
+        }
     },
     playerChanged: function(snapshot)
     {
@@ -90,7 +96,7 @@ var rpsGame =
 
         if(rpsGame.currentPlayer !== null) return;
 
-        this.toggleWelcomeForm();
+        rpsGame.toggleWelcomeForm();
     },
     toggleWelcomeForm: function()
     {
