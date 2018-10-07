@@ -35,21 +35,30 @@
 </head>
 <body>
     <div class="container">
-        <div class="jumbotron">
-            <h1 class="display-4">Hello, world!</h1>
-            <p class="lead">This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information.</p>
+        <div id="welcome" class="jumbotron">
+            <h1 class="display-4">Welcome!</h1>
+            <p class="lead">Rock, Paper, Siccords Online.</p>
+            <form id="join-game-form">
+                <div class="form-group">
+                    <input type="input" class="form-control" id="join-game-input" aria-describedby="emailHelp" placeholder="Type in your name">
+                </div>
+                <button type="submit" class="btn btn-primary" id="join-game-submit">Submit</button>
+            </form>
         </div>
-        <div class="row">
-            <div class="col-4"></div>
-            <div class="col-4">chat</div>
-            <div class="col-4"></div>
+        <div id="players-area" class="row">
+            <div class="col-12 col-sm-4">Main Player</div>
+            <div class="col-6 col-sm-4">chat</div>
+            <div class="col-6 col-sm-4">secondary Player</div>
         </div>
-        <button id="join-game" class="btn btn-primary">Join The Game</button>
     </div>
     <script type="text/javascript">
         $(document).ready(function(){
             console.log("lest start ...");
             rpsGame.init();
+        });
+
+        $(window).on("beforeunload", function() { 
+            rpsGame.leaveTheGame();
         });
     </script>
     
