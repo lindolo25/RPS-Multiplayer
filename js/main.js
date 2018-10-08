@@ -63,6 +63,7 @@ var rpsGame =
             player.set({
                 name: username,
                 wins: 0,
+                ties: 0,
                 lose: 0,
                 id: player.key,
                 currentPlay: "n"
@@ -176,6 +177,7 @@ var rpsGame =
     {
         $("#player-" + playerChanged + "-name").text(this.players[i].name);
         $("#player-" + playerChanged + "-wins").text(this.players[i].wins);
+        $("#player-" + playerChanged + "-ties").text(this.players[i].ties);
         $("#player-" + playerChanged + "-losses").text(this.players[i].lose);
     },
     toggleSecondaryPlayer: function(show)
@@ -185,6 +187,7 @@ var rpsGame =
             $("#waiting-player-connection").hide();
             $("#player-secondary-name").show();
             $("#player-secondary-wins-p").show();
+            $("#player-secondary-ties-p").show();
             $("#player-secondary-losses-p").show();
             $("#play-choises>button").removeAttr("disabled");
         }
@@ -193,6 +196,7 @@ var rpsGame =
             $("#waiting-player-connection").show();
             $("#player-secondary-name").hide();
             $("#player-secondary-wins-p").hide();
+            $("#player-secondary-ties-p").hide();
             $("#player-secondary-losses-p").hide();
             $("#play-choises>button").attr("disabled", "disabled");
         }
