@@ -3,6 +3,62 @@ var rpsGame =
     players: [],
     currentPlayer: null,
     secondaryPlayer: null,
+    chat: {
+        init: function()
+        {
+            firebase.database().ref("chatRoom/").on("child_added", this.changed);
+            console.log("chat started");
+        },
+        log: function(value, isLog)
+        {
+            if(isLog === undefined) isLog = true;
+
+            firebase.database().ref("chatRoom/").push({ value: value, isALog: isLog, playerId: rpsGame.currentPlayer, playerTo: rpsGame.secondaryPlayer });
+            console.log("chat entered");
+        },
+        changed: function(snapshot)
+        {
+            var data = snapshot.val();
+            if(rpsGame.currentPlayer !== data.playerId && rpsGame.currentPlayer !== data.playerTo) return;
+            
+            var style = "chat-primary";
+            if(data.isALog)
+            {
+                if(data.playerId !== rpsGame.currentPlayer) return;
+                style = "chat-info";
+            }
+            else if(data.playerId !== rpsGame.currentPlayer) 
+            {
+                style = "chat-secondary";
+            }
+            
+            var newDiv = $("<div>");
+            newDiv.addClass(style);
+            newDiv.attr("data-player-id", data.playerId);
+            newDiv.attr("data-player-to", data.playerTo);
+            newDiv.attr("data-is-a-log", data.isALog);
+            newDiv.append("<span>"+ data.value +"</span>");
+            newDiv.appendTo("#chat-area");
+
+            // scroll down the chat ------------------------------------------
+            $('#chat-area').scrollTop($('#chat-area')[0].scrollHeight);
+
+            console.log("chat changed");
+        },
+        clear: function() 
+        { 
+            firebase.database().ref("chatRoom/").off();
+            $("#chat-area").empty(); 
+            console.log("chat cleared"); 
+        },
+        terminate: async function()
+        {
+            var removed = await firebase.database().ref("chatRoom/").remove();            
+            this.clear();
+            console.log(removed);
+            console.log("chat terminated");
+        }
+    },
     get arePlayersAvailable() {
         if(this.players.length < 2) return true;
         else return false;
@@ -43,6 +99,17 @@ var rpsGame =
         // play choises click event ---------------------------------------------------
         $("#play-choises>button").on("click", this.playClick);
 
+        // chat form event subscription -----------------------------------------------
+        $("#chat-form-submit").on("click", function(event) 
+        {
+            event.preventDefault();
+            var text = $("#chat-form-input").val().trim();
+            $("#chat-form-input").val("");
+            if(text === "" || text === null) return;
+
+            rpsGame.chat.log(text, false);
+        });
+
         // suscrive join-game-submit click event --------------------------------------
         $("#join-game-submit").on("click", function(event) 
         {
@@ -69,7 +136,8 @@ var rpsGame =
                 currentPlay: "n"
             });
 
-            firebase.database().ref("players/" + player.key + "/currentPlay").on("value", rpsGame.playerPlayChanged)
+            firebase.database().ref("players/" + player.key + "/currentPlay").on("value", rpsGame.playerPlayChanged);
+            rpsGame.chat.init();
 
             $("#welcome").hide();
             $("#players-area").show();
@@ -80,7 +148,15 @@ var rpsGame =
     {
         if(isClosing) firebase.database().ref("players/").off();
 
-        if(this.secondaryPlayer !== null) firebase.database().ref("players/" + this.secondaryPlayer + "/currentPlay").set("n");
+        if(this.secondaryPlayer !== null) 
+        {
+            firebase.database().ref("players/" + this.secondaryPlayer + "/currentPlay").set("n");
+            this.chat.clear();
+        }
+        else 
+        {
+            this.chat.terminate();
+        }
 
         if(this.currentPlayer !== null)
         {
@@ -102,6 +178,10 @@ var rpsGame =
         // print the changes on the screen ------------------------------------------
         var player = "secondary";
         if(rpsGame.players[i].id === rpsGame.currentPlayer) player = "primary";
+        else
+        {
+            if(rpsGame.players[i].currentPlay !== "n") rpsGame.chat.log(rpsGame.players[i].name +" just lock his/her play.");
+        }
 
         rpsGame.printPlayerChanges(i,player);
 
@@ -122,6 +202,7 @@ var rpsGame =
         {
             rpsGame.toggleSecondaryPlayer(true);
             rpsGame.secondaryPlayer = rpsGame.players[i].id;
+            rpsGame.chat.log(rpsGame.players[i].name +" just joined.");
         }
         rpsGame.printPlayerChanges(i,player);
         
@@ -142,6 +223,8 @@ var rpsGame =
         {
             rpsGame.toggleSecondaryPlayer(false);
             rpsGame.secondaryPlayer = null;
+            
+            rpsGame.chat.log(snapshot.val().name +" just left the game.");
         }
         
         // toggle screen if current player left ---------------------------------------
@@ -215,14 +298,43 @@ var rpsGame =
     {
         if(this.currentPlayer === null && this.secondaryPlayer === null) return;
         
-        var current = this.players[this.currentPlayerIndex].currentPlay;
+        var player = this.players[this.currentPlayerIndex]
+        var current = player.currentPlay;
         var secondary = this.players[this.secondaryPlayerIndex].currentPlay;
 
         if(current === "n" || secondary === "n") return
         else
         {
             console.log("players are loked");
-        }
+            var wins = player.wins;
+            var losses = player.lose;
+            var ties = player.ties;
 
+            if(current === secondary)
+            {
+                console.log("this is a tie.");
+                ties++;
+            }
+            else 
+            {
+                var youWin1 = current === "r" && secondary === "s";
+                var youWin2 = current === "p" && secondary === "r"; 
+                var youWin3 = current === "s" && secondary === "p";
+
+                if(youWin1 || youWin2 || youWin3)
+                {
+                    console.log(this.players[this.currentPlayerIndex].name + " wins this play.");
+                    wins++;
+                }
+                else
+                {
+                    console.log(this.players[this.currentPlayerIndex].name + " losses, good look next time.");
+                    losses++;
+                }
+            }
+
+            // update the database -----------------------------------------------------------
+            firebase.database().ref("players/" + this.currentPlayer).update({ wins: wins, lose: losses, ties: ties, currentPlay: "n" });
+        }
     }
 };
