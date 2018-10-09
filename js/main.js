@@ -7,14 +7,14 @@ var rpsGame =
         init: function()
         {
             firebase.database().ref("chatRoom/").on("child_added", this.changed);
-            console.log("chat started");
+            //console.log("chat started");
         },
         log: function(value, isLog)
         {
             if(isLog === undefined) isLog = true;
 
             firebase.database().ref("chatRoom/").push({ value: value, isALog: isLog, playerId: rpsGame.currentPlayer, playerTo: rpsGame.secondaryPlayer });
-            console.log("chat entered");
+            //console.log("chat entered");
         },
         changed: function(snapshot)
         {
@@ -43,20 +43,20 @@ var rpsGame =
             // scroll down the chat ------------------------------------------
             $('#chat-area').scrollTop($('#chat-area')[0].scrollHeight);
 
-            console.log("chat changed");
+            //console.log("chat changed");
         },
         clear: function() 
         { 
             firebase.database().ref("chatRoom/").off();
             $("#chat-area").empty(); 
-            console.log("chat cleared"); 
+            //console.log("chat cleared"); 
         },
         terminate: async function()
         {
             var removed = await firebase.database().ref("chatRoom/").remove();            
             this.clear();
-            console.log(removed);
-            console.log("chat terminated");
+            //console.log(removed);
+            //console.log("chat terminated");
         }
     },
     get arePlayersAvailable() {
@@ -165,7 +165,7 @@ var rpsGame =
             this.currentPlayer = null;
             $("#players-area").hide();
             $("#welcome").show();
-            console.log(removed);
+            //console.log(removed);
         }
     },
     playerChanged: function(snapshot)
@@ -192,7 +192,7 @@ var rpsGame =
     {
         // Push the new player in ---------------------------------------------------
         rpsGame.players.push(snapshot.val());
-        console.log("Player Joined");
+        //console.log("Player Joined");
         
         // print the changes on the screen ------------------------------------------
         var i = rpsGame.getPlayerIndex(snapshot.key);
@@ -216,7 +216,7 @@ var rpsGame =
         // remove the player ---------------------------------------------------------
         var i = rpsGame.getPlayerIndex(snapshot.key);
         rpsGame.players.splice(i, 1);
-        console.log("Player Left");
+        //console.log("Player Left");
 
         // print the changes on the screen -------------------------------------------
         if(snapshot.key !== rpsGame.currentPlayer)
@@ -234,7 +234,7 @@ var rpsGame =
     },
     playerPlayChanged: function(snapshot)
     {
-        console.log("player made a play");
+        //console.log("player made a play");
 
         if(snapshot.val() === "n")
         {
@@ -250,10 +250,12 @@ var rpsGame =
         if(!rpsGame.arePlayersAvailable)
         {
             $("#join-game-form").hide();
+            $('<p id="room-full">The room is full at this time, please try again later.</p>').appendTo("#welcome");
         }
         else
         {
             $("#join-game-form").show();
+            $("#room-full").remove();
         }
     },
     printPlayerChanges: function(i, playerChanged)
@@ -305,14 +307,15 @@ var rpsGame =
         if(current === "n" || secondary === "n") return
         else
         {
-            console.log("players are loked");
+            //console.log("players are loked");
             var wins = player.wins;
             var losses = player.lose;
             var ties = player.ties;
 
             if(current === secondary)
             {
-                console.log("this is a tie.");
+                //console.log("this is a tie.");
+                this.chat.log("this is a tie.");
                 ties++;
             }
             else 
@@ -323,12 +326,14 @@ var rpsGame =
 
                 if(youWin1 || youWin2 || youWin3)
                 {
-                    console.log(this.players[this.currentPlayerIndex].name + " wins this play.");
+                    //console.log(this.players[this.currentPlayerIndex].name + " wins this play.");
+                    this.chat.log("You win this play!");
                     wins++;
                 }
                 else
                 {
-                    console.log(this.players[this.currentPlayerIndex].name + " losses, good look next time.");
+                    //console.log(this.players[this.currentPlayerIndex].name + " losses, good look next time.");
+                    this.chat.log("You lose, good look next time.");
                     losses++;
                 }
             }
